@@ -1,0 +1,608 @@
+//**************************************************************************
+// Practicas IG usando objetos
+//**************************************************************************
+
+#include <GL/glut.h>
+#include <ctype.h>
+#include <math.h>
+#include <vector>
+#include "objetos.h"
+#include <iostream>
+#include <string>
+
+
+using namespace std;
+
+
+// variables que definen la posicion de la camara en coordenadas polares
+GLfloat Observer_distance;
+GLfloat Observer_angle_x;
+GLfloat Observer_angle_y;
+
+// variables que controlan la ventana y la transformacion de perspectiva
+GLfloat Size_x,Size_y,Front_plane,Back_plane;
+
+// variables que determninan la posicion y tamaño de la ventana X
+int Window_x=50,Window_y=50,Window_width=650,Window_high=650;
+
+//Variables que determinana la figura y el modo
+int numeroPractica=4;
+int modo=1; // 1-puntos, 2-alambre, 3-solido, 4- solido ajedrez
+int modelo=1; //distintas figuras
+
+//variables grados de libertad practica 3
+bool sentidoCable= true; //hacia abajo
+float movCarro= 1.5;
+float movCable= 0.0;
+int anguloGiro=0;
+
+float velocidadMovCarro=0.0;
+float velocidadMovCable=0.0;
+int velocidadGiro=0;
+
+//variables para mover la luz de practica 4
+int alfa=0;
+int beta=0;
+
+// objetos
+_cubo cubo1;
+_piramide piramide1;
+_tetraedro tetraedro1;
+_modeloPLY peon(1.0, "perfil.ply");
+_modeloPLY peonMadera(1.0, "perfil.ply");
+_modeloPLY modeloBeethoven(0.4, "beethoven.ply");
+_modeloPLY poligonoXZ(1.0, "poligonoXZ.ply");
+_modeloJerarquico grua(5,6);
+_modeloPLY lataPSup(1.0, "lata-psup.ply");
+_modeloPLY lataPInf(1.0, "lata-pinf.ply");
+_modeloPLY lataPCue(1.0, "lata-pcue.ply");
+_luz luzAmbiente(0, 'a', 0.3, 0.3, 0.3, 1.0);
+_luz luzDireccional(1, 'a', 0.3, 0.3, 0.0, 1.0);
+_textura texturaLata;
+_textura texturaMadera;
+_textura texturaPerla;
+_textura texturaNegra;
+
+
+//**************************************************************************
+//
+//***************************************************************************
+
+void clean_window()
+{
+
+glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+}
+
+
+//**************************************************************************
+// Funcion para definir la transformación de proyeccion
+//***************************************************************************
+
+void change_projection()
+{
+
+glMatrixMode(GL_PROJECTION);
+glLoadIdentity();
+
+// formato(x_minimo,x_maximo, y_minimo, y_maximo,plano_delantero, plano_traser)
+//  plano_delantero>0  plano_trasero>PlanoDelantero)
+glFrustum(-Size_x,Size_x,-Size_y,Size_y,Front_plane,Back_plane);
+}
+
+//**************************************************************************
+// Funcion para definir la transformación de vista (posicionar la camara)
+//***************************************************************************
+
+void change_observer()
+{
+
+// posicion del observador
+glMatrixMode(GL_MODELVIEW);
+glLoadIdentity();
+glTranslatef(0,0,-Observer_distance);
+glRotatef(Observer_angle_x,1,0,0);
+glRotatef(Observer_angle_y,0,1,0);
+}
+
+//**************************************************************************
+// Funcion que dibuja los ejes utilizando la primitiva grafica de lineas
+//***************************************************************************
+
+void draw_axis()
+{
+	
+glDisable(GL_LIGHTING);
+glLineWidth(2);
+glBegin(GL_LINES);
+// eje X, color rojo
+glColor3f(1,0,0);
+glVertex3f(-AXIS_SIZE,0,0);
+glVertex3f(AXIS_SIZE,0,0);
+// eje Y, color verde
+glColor3f(0,1,0);
+glVertex3f(0,-AXIS_SIZE,0);
+glVertex3f(0,AXIS_SIZE,0);
+// eje Z, color azul
+glColor3f(0,0,1);
+glVertex3f(0,0,-AXIS_SIZE);
+glVertex3f(0,0,AXIS_SIZE);
+glEnd();
+}
+
+
+//**************************************************************************
+// Funcion que dibuja los objetos
+//***************************************************************************
+
+void draw_objects()
+{
+	
+	if(numeroPractica==1){
+		//PRACTICA 1
+		if(modelo==1){
+			if(modo==1)
+				cubo1.draw_puntos(0.0, 0.0, 0.0, 4);
+			else if(modo==3){
+				cubo1.draw_aristas(0.0, 0.0, 0.0, 2);
+				cubo1.draw_solido(0.0, 1.0, 0.0);
+			}else if(modo==4){
+				cubo1.draw_aristas(0.0, 0.0, 0.0, 2);
+				cubo1.draw_solido_ajedrez(0.0, 1.0, 0.0, 0.0, 0.6, 0.0);
+			}else 
+				cubo1.draw_aristas(0.0, 0.0, 0.0, 2);
+		}
+		else if(modelo==2){
+			if(modo==1)
+				piramide1.draw_puntos(0.0, 0.0, 0.0, 4);
+			else if(modo==3){
+				piramide1.draw_aristas(0.0, 0.0, 0.0, 2);
+				piramide1.draw_solido(0.0, 1.0, 0.0);
+			}else if(modo==4){
+				piramide1.draw_aristas(0.0, 0.0, 0.0, 2);
+				piramide1.draw_solido_ajedrez(0.0, 1.0, 0.0, 0.0, 0.6, 0.0);
+			}else 
+				piramide1.draw_aristas(0.0, 0.0, 0.0, 2);
+		}else{
+			if(modo==1)
+				tetraedro1.draw_puntos(0.0, 0.0, 0.0, 4);
+			else if(modo==3){
+				tetraedro1.draw_aristas(0.0, 0.0, 0.0, 2);
+				tetraedro1.draw_solido(0.0, 1.0, 0.0);
+			}else if(modo==4){
+				tetraedro1.draw_aristas(0.0, 0.0, 0.0, 2);
+				tetraedro1.draw_solido_ajedrez(0.0, 1.0, 0.0, 0.0, 0.6, 0.0);
+			}else 
+				tetraedro1.draw_aristas(0.0, 0.0, 0.0, 2);
+		}
+	}else if(numeroPractica==2){
+		//PRACTICA 2
+		if(modelo==1){
+			if(modo==1)
+				peon.draw_puntos(0.0, 0.0, 0.0, 4);
+			else if(modo==3){
+				peon.draw_aristas(0.0, 0.0, 0.0, 2);
+				peon.draw_solido(0.0, 1.0, 0.0);
+			}else if(modo==4){
+				peon.draw_aristas(0.0, 0.0, 0.0, 2);
+				peon.draw_solido_ajedrez(0.0, 1.0, 0.0, 0.0, 0.6, 0.0);
+			}else 
+				peon.draw_aristas(0.0, 0.0, 0.0, 2);
+		}else if(modelo==2){
+			if(modo==1)
+				poligonoXZ.draw_puntos(0.0, 0.0, 0.0, 4);
+			else if(modo==3){
+				poligonoXZ.draw_aristas(0.0, 0.0, 0.0, 2);
+				poligonoXZ.draw_solido(0.0, 1.0, 0.0);
+			}else if(modo==4){
+				poligonoXZ.draw_aristas(0.0, 0.0, 0.0, 2);
+				poligonoXZ.draw_solido_ajedrez(0.0, 1.0, 0.0, 0.0, 0.6, 0.0);
+			}else{ 
+				poligonoXZ.draw_puntos(0.0, 0.0, 0.0, 4);
+				poligonoXZ.draw_aristas(0.0, 0.0, 0.0, 2);
+			}
+		}else{
+			if(modo==1)
+				modeloBeethoven.draw_puntos(0.0, 0.0, 0.0, 3);
+			else if(modo==3){
+				modeloBeethoven.draw_aristas(0.0, 0.0, 0.0, 1);
+				modeloBeethoven.draw_solido(0.0, 1.0, 0.0);
+			}else if(modo==4){
+				modeloBeethoven.draw_aristas(0.0, 0.0, 0.0, 1);
+				modeloBeethoven.draw_solido_ajedrez(0.0, 1.0, 0.0, 0.0, 0.6, 0.0);
+			}else 
+				modeloBeethoven.draw_aristas(0.0, 0.0, 0.0, 1);
+		}
+	}else if(numeroPractica==3){
+		//PRACTICA 3
+		grua.drawModeloJerarquico(grua.tamTorre, grua.tamPluma, movCarro, movCable, anguloGiro);
+	}else if(numeroPractica==4){
+		//PRACTICA 4
+		if(modelo==1){
+			lataPSup.draw_solido_sombreado_plano(0.5, 0.5, 0.5);
+			lataPInf.draw_solido_sombreado_plano(0.5, 0.5, 0.5);
+			texturaLata.activar();
+			lataPCue.draw_solido_sombreado_plano(0.6, 0.0, 0.0);
+			texturaLata.desactivar();
+
+			glTranslatef(1.0, 0.28, 0.7);
+			
+			glPushMatrix();
+			glTranslatef(-1.0, 0.0, 0.0);
+			glScalef(0.2, 0.2, 0.2);
+			texturaMadera.activarProcedural();
+			peon.draw_solido_sombreado_plano(0.0, 0.4, 0.0);
+			texturaMadera.desactivarProcedural();
+			glPopMatrix();
+
+			glPushMatrix();
+			glTranslatef(-0.5, 0.0, 0.0);
+			glScalef(0.2, 0.2, 0.2);
+			texturaPerla.activar();
+			texturaPerla.perla();
+			peon.draw_solido_sombreado_plano(0.7, 0.7, 0.7);
+			texturaPerla.desactivar();
+			glPopMatrix();
+
+			glPushMatrix();
+			glScalef(0.2, 0.2, 0.2);
+			texturaNegra.activar();
+			peon.draw_solido_sombreado_plano(0.0, 0.0, 0.0);
+			texturaNegra.plasticoNegro();
+			texturaNegra.desactivar();
+			glPopMatrix();
+		}else{
+			lataPSup.draw_solido_sombreado_suave(0.5, 0.5, 0.5);
+			lataPInf.draw_solido_sombreado_suave(0.5, 0.5, 0.5);
+			texturaLata.activarProcedural();
+			lataPCue.draw_solido_sombreado_suave(0.6, 0.0, 0.0);
+			texturaLata.desactivarProcedural();
+
+			glTranslatef(1.0, 0.28, 0.7);
+	
+			glPushMatrix();
+			glTranslatef(-1.0, 0.0, 0.0);
+			glScalef(0.2, 0.2, 0.2);
+			texturaMadera.activar();
+			peon.draw_solido_sombreado_suave(0.0, 0.4, 0.0);
+			texturaMadera.desactivar();
+			glPopMatrix();
+
+			glPushMatrix();
+			glTranslatef(-0.5, 0.0, 0.0);
+			glScalef(0.2, 0.2, 0.2);
+			texturaPerla.activar();
+			texturaPerla.perla();
+			peon.draw_solido_sombreado_suave(0.7, 0.7, 0.7);
+			texturaPerla.desactivar();
+			glPopMatrix();
+
+			glPushMatrix();
+			glScalef(0.2, 0.2, 0.2);
+			peon.draw_solido_sombreado_suave(0.0, 0.0, 0.0);
+			glPopMatrix();
+		}
+		
+		
+	}
+}
+//**************************************************************************
+// Funcion para cambiar velocidades de animacion de objeto jerarquico
+//***************************************************************************
+
+void cambiarVelocidad(){
+	movCarro += velocidadMovCarro;
+	anguloGiro += velocidadGiro ;
+	movCable += velocidadMovCable;
+
+	if(movCable>=grua.tamTorre-0.5){ 
+		movCable=grua.tamTorre-0.5;
+		velocidadMovCable=0;
+	}else if(movCable<=0){
+		movCable=0;
+		velocidadMovCable=0;
+	}
+
+	if(movCarro>=grua.tamPluma-1.0){
+		movCarro=grua.tamPluma -1.0;
+		velocidadMovCarro=0;
+	}
+	else if(movCarro<=0){ 
+		movCarro=0;
+		velocidadMovCarro=0;
+	}
+
+	glutPostRedisplay();
+
+}
+
+//**************************************************************************
+//
+//***************************************************************************
+
+void draw(void)
+{
+clean_window();
+change_observer();
+draw_axis();
+draw_objects();
+glutSwapBuffers();
+}
+
+
+
+//***************************************************************************
+// Funcion llamada cuando se produce un cambio en el tamaño de la ventana
+//
+// el evento manda a la funcion:
+// nuevo ancho
+// nuevo alto
+//***************************************************************************
+
+void change_window_size(int Ancho1,int Alto1)
+{
+float Aspect_ratio;
+
+Aspect_ratio=(float) Alto1/(float )Ancho1;
+Size_y=Size_x*Aspect_ratio;
+change_projection();
+glViewport(0,0,Ancho1,Alto1);
+glutPostRedisplay();
+}
+
+
+//***************************************************************************
+// Funcion llamada cuando se aprieta una tecla normal
+//
+// el evento manda a la funcion:
+// codigo de la tecla
+// posicion x del raton
+// posicion y del raton
+//***************************************************************************
+
+void normal_key(unsigned char Tecla1,int x,int y)
+{
+	if (toupper(Tecla1)=='Q') exit(0);
+	else if (toupper(Tecla1)=='M' && (numeroPractica==1 || numeroPractica==2)) modelo=(modelo+1)%3;
+	else if (toupper(Tecla1)=='P') modo = 1;
+	else if (toupper(Tecla1)=='L') modo = 2;
+	else if (toupper(Tecla1)=='S') modo = 3;
+	else if (toupper(Tecla1)=='A' && numeroPractica != 4) modo = 4;
+	else if (toupper(Tecla1)=='1'){ numeroPractica = 1; modelo=1;}
+	else if (toupper(Tecla1)=='2'){ numeroPractica = 2; modelo=1;}
+	else if (toupper(Tecla1)=='3')numeroPractica = 3; 
+	else if (toupper(Tecla1)=='4')numeroPractica = 4;
+	else if (Tecla1=='c' && numeroPractica==3) {
+		movCarro+=0.1;
+		if(movCarro>grua.tamPluma-1.0) movCarro=grua.tamPluma -1.0;
+	}
+	else if (Tecla1=='C' && numeroPractica==3) {
+		movCarro-=0.1;
+		if(movCarro<0) movCarro=0;
+	}
+	else if (Tecla1=='x' && numeroPractica==3) {
+		movCable=(movCable+0.1);
+		if(movCable>grua.tamTorre-0.3) movCable=grua.tamTorre-0.3;
+	}
+	else if (Tecla1=='X' && numeroPractica==3) {
+		movCable=(movCable-0.1);
+		if(movCable<0) movCable=0;
+	}
+	else if (Tecla1=='z' && numeroPractica==3) {
+		anguloGiro=(anguloGiro+5)%360;
+		
+	}
+	else if (Tecla1=='Z' && numeroPractica==3) {
+		anguloGiro=(anguloGiro-5)%-360;
+	}
+	else if (Tecla1=='b' && numeroPractica==3) {
+		velocidadGiro+=1;
+		if(velocidadGiro>20) velocidadGiro=20;
+		
+	}
+	else if (Tecla1=='B' && numeroPractica==3) {
+		velocidadGiro-=1;
+		if(velocidadGiro<-20) velocidadGiro=-20;
+	}
+	else if (Tecla1=='n' && numeroPractica==3) {
+		velocidadMovCable+=0.01;
+					
+	}
+	else if (Tecla1=='N' && numeroPractica==3) {
+		velocidadMovCable-=0.01;
+			
+	}else if (Tecla1=='m' && numeroPractica==3) {
+		velocidadMovCarro+=0.01;	
+	}
+	else if (Tecla1=='M' && numeroPractica==3) {
+		velocidadMovCarro-=0.01;
+	}
+	else if (toupper(Tecla1)=='M' && numeroPractica==4)modelo=(modelo+1)%2;
+	else if(toupper(Tecla1)=='A' && numeroPractica==4){
+		beta+=1;
+		luzDireccional.mover(alfa, beta);				
+	}
+	else if(toupper(Tecla1)=='Z' && numeroPractica==4){
+		beta-=1;
+		luzDireccional.mover(alfa, beta);
+	}
+	else if(toupper(Tecla1)=='X' && numeroPractica==4){
+		alfa+=1;
+		luzDireccional.mover(alfa, beta);
+	}
+	else if(toupper(Tecla1)=='C' && numeroPractica==4){
+		beta-=1;
+		luzDireccional.mover(alfa, beta);
+	}
+		
+	glutPostRedisplay();
+
+}
+
+//***************************************************************************
+// Funcion llamada cuando se aprieta una tecla especial
+//
+// el evento manda a la funcion:
+// codigo de la tecla
+// posicion x del raton
+// posicion y del raton
+
+//***************************************************************************
+
+void special_key(int Tecla1,int x,int y)
+{
+
+switch (Tecla1){
+	case GLUT_KEY_LEFT:Observer_angle_y--;break;
+	case GLUT_KEY_RIGHT:Observer_angle_y++;break;
+	case GLUT_KEY_UP:Observer_angle_x--;break;
+	case GLUT_KEY_DOWN:Observer_angle_x++;break;
+	case GLUT_KEY_PAGE_UP:Observer_distance*=1.2;break;
+	case GLUT_KEY_PAGE_DOWN:Observer_distance/=1.2;break;
+	}
+glutPostRedisplay();
+}
+
+
+
+//***************************************************************************
+// Funcion de incializacion
+//***************************************************************************
+
+void initialize(void)
+{
+/*
+glEnable(GL_CULL_FACE);
+glCullFace(GL_BACK);
+*/
+
+// se inicalizan la ventana y los planos de corte
+Size_x=0.5;
+Size_y=0.5;
+Front_plane=1;
+Back_plane=1000;
+
+// se incia la posicion del observador, en el eje z
+Observer_distance=4*Front_plane;
+Observer_angle_x=0;
+Observer_angle_y=0;
+
+// se indica cual sera el color para limpiar la ventana	(r,v,a,al)
+// blanco=(1,1,1,1) rojo=(1,0,0,1), ...
+glClearColor(1,1,1,1);
+
+// se habilita el z-bufer
+glEnable(GL_DEPTH_TEST);
+change_projection();
+glViewport(0,0,Window_width,Window_high);
+
+//activamos luces
+luzAmbiente.posicion(2.0, 2.0, 2.0, 1.0);
+luzAmbiente.activarLuzAmbiente();
+luzDireccional.posicion(1.5, 1.5, 1.5, 0.0);
+luzDireccional.activarLuzAmbiente();
+}
+
+
+//***************************************************************************
+// Programa principal
+//
+// Se encarga de iniciar la ventana, asignar las funciones e comenzar el
+// bucle de eventos
+//***************************************************************************
+
+int main(int argc, char **argv)
+{
+
+peon.crearObjetoRevolucion(10);
+peon.calcularNormalesCaras();
+peon.calcularNormalesVertices();
+peonMadera.crearObjetoRevolucionConTexturas(10);
+peonMadera.calcularNormalesCaras();
+peonMadera.calcularNormalesVertices();
+lataPSup.crearObjetoRevolucion(20);
+lataPSup.calcularNormalesCaras();
+lataPSup.calcularNormalesVertices();
+lataPInf.crearObjetoRevolucion(20);
+lataPInf.calcularNormalesCaras();
+lataPInf.calcularNormalesVertices();
+lataPCue.crearObjetoRevolucionConTexturas(20);
+lataPCue.calcularNormalesCaras();
+lataPCue.calcularNormalesVertices();
+modeloBeethoven.usarCarasArchivoPLY();
+poligonoXZ.crearObjetoBarrido(1.0, -1.0, 1.0, 0.7);
+texturaLata.cargarImagen("text-lata-1.jpg");
+texturaMadera.cargarImagen("text-madera.jpg");
+
+//Instrucciones de uso_sombreado_plano
+cout << "--------------------------------------------------------------------------------" << endl;
+cout << "FUNCIONAMIENTO:"<<endl;
+cout << "    -Teclas numericas: alternar entre practicas (1,2,3,4)"<<endl;
+cout << "    -Cursores: mover los ejes" << endl;
+cout << "    -Tecla Avpag / Repag: zoom" << endl;
+cout << "    *Teclas especiales P1 y P2*" << endl;
+cout << "      -Tecla M: alternar entre distintos modelos" << endl;
+cout << "      -Tecla P: vista de puntos" << endl;
+cout << "      -Tecla L: vista alambre" << endl;
+cout << "      -Tecla S: vista de objeto solido" << endl;
+cout << "      -Tecla A: vista de ajedrez" << endl;
+cout << "    *Teclas especiales P3(grua)*" << endl;
+cout << "      -Tecla z/Z: modificar giro de la pluma" << endl;
+cout << "      -Tecla x/X: bajar o subir objeto" << endl;
+cout << "      -Tecla c/C: modificar posicion del carro" << endl;
+cout << "      -Tecla b/B: incrementa/decrementa velocidad de giro de la pluma" << endl;
+cout << "      -Tecla n/N: incrementa/decrementa velocidad de subida y bajada del onjeto" << endl;
+cout << "      -Tecla m/M: incrementa/decrementa velocidad del carro" << endl;
+cout << "    *Teclas especiales P4*" << endl;
+cout << "      -Tecla a: aumentar beta" << endl;
+cout << "      -Tecla z: disminuir beta" << endl;
+cout << "      -Tecla x: aumentar alfa" << endl;
+cout << "      -Tecla c: disminuir alfa" << endl;
+cout << "    -Tecla Q: salir" << endl;
+cout << "--------------------------------------------------------------------------------" << endl;
+
+
+
+// se llama a la inicialización de glut
+glutInit(&argc, argv);
+
+// se indica las caracteristicas que se desean para la visualización con OpenGL
+// Las posibilidades son:
+// GLUT_SIMPLE -> memoria de imagen simple
+// GLUT_DOUBLE -> memoria de imagen doble
+// GLUT_INDEX -> memoria de imagen con color indizado
+// GLUT_RGB -> memoria de imagen con componentes rojo, verde y azul para cada pixel
+// GLUT_RGBA -> memoria de imagen con componentes rojo, verde, azul y alfa para cada pixel
+// GLUT_DEPTH -> memoria de profundidad o z-bufer
+// GLUT_STENCIL -> memoria de estarcido
+glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
+
+// posicion de la esquina inferior izquierdad de la ventana
+glutInitWindowPosition(Window_x,Window_y);
+
+// tamaño de la ventana (ancho y alto)
+glutInitWindowSize(Window_width,Window_high);
+
+// llamada para crear la ventana, indicando el titulo (no se visualiza hasta que se llama
+// al bucle de eventos)
+glutCreateWindow("PRACTICAS IG");
+
+
+// asignación de la funcion llamada "dibujar" al evento de dibujo
+glutDisplayFunc(draw);
+// asignación de la funcion llamada "change_window_size" al evento correspondiente
+glutReshapeFunc(change_window_size);
+// asignación de la funcion llamada "normal_key" al evento correspondiente
+glutKeyboardFunc(normal_key);
+// asignación de la funcion llamada "tecla_Especial" al evento correspondiente
+glutSpecialFunc(special_key);
+//animacion de velocidad
+glutIdleFunc(cambiarVelocidad);
+
+// funcion de inicialización
+initialize();
+
+// inicio del bucle de eventos
+glutMainLoop();
+return 0;
+}

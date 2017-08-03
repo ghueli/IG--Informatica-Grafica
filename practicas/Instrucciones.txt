@@ -1,0 +1,29 @@
+Comandos:
+	make
+	./practica1
+
+--------------------------------------------------------------------------------
+FUNCIONAMIENTO:
+    -Teclas numericas: alternar entre practicas (1,2,3)
+    -Cursores: mover los ejes
+    -Tecla Avpag / Repag: zoom
+    *Teclas especiales P1 y P2*
+      -Tecla M: alternar entre distintos modelos
+      -Tecla P: vista de puntos
+      -Tecla L: vista alambre
+      -Tecla S: vista de objeto solido
+      -Tecla A: vista de ajedrez
+    *Teclas especiales P3(grua)*
+      -Tecla z/Z: modificar giro de la pluma
+      -Tecla x/X: bajar o subir objeto
+      -Tecla c/C: modificar posivion del carro
+      -Tecla b/B: incrementa/decrementa velocidad de giro de la pluma
+      -Tecla n/N: incrementa/decrementa velocidad de subida y bajada del onjeto
+      -Tecla m/M: incrementa/decrementa velocidad del carro
+    *Teclas especiales P4*" 
+      -Tecla a: aumentar beta" 
+      -Tecla z: disminuir beta" 
+      -Tecla x: aumentar alfa" 
+      -Tecla c: disminuir alfa" 
+    -Tecla Q: salir
+--------------------------------------------------------------------------------
